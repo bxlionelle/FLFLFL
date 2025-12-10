@@ -1,5 +1,7 @@
 <?php
 
+// app/Http/Middleware/TrustProxies.php
+
 namespace App\Http\Middleware;
 
 use Illuminate\Http\Middleware\TrustProxies as Middleware;
@@ -12,7 +14,7 @@ class TrustProxies extends Middleware
      *
      * @var array<int, string>|string|null
      */
-    protected $proxies;
+    protected $proxies = '*'; // <-- CHANGE THIS LINE TO TRUST ALL PROXIES FOR LOCAL DEV
 
     /**
      * The headers that should be used to detect proxies.

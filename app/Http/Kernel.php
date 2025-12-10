@@ -16,12 +16,17 @@ class Kernel extends HttpKernel
     protected $middleware = [
         // \App\Http\Middleware\TrustHosts::class,
         \App\Http\Middleware\TrustProxies::class,
-        \Illuminate\Http\Middleware\HandleCors::class,
+        
+        // <<< FIX 1: CORRECT CORS MIDDLEWARE >>>
+        // REPLACED \Illuminate\Http\Middleware\HandleCors::class
+        \Fruitcake\Cors\HandleCors::class, 
+        // <<< END FIX 1 >>>
+        
         \App\Http\Middleware\PreventRequestsDuringMaintenance::class,
         \Illuminate\Foundation\Http\Middleware\ValidatePostSize::class,
         \App\Http\Middleware\TrimStrings::class,
         \Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull::class,
-        \App\Http\Middleware\RoleMiddleware::class,
+        //\App\Http\Middleware\RoleMiddleware::class,
     ];
 
     /**
@@ -40,7 +45,11 @@ class Kernel extends HttpKernel
         ],
 
         'api' => [
-            \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
+            // <<< FIX 2: REMOVE SESSION STATE MIDDLEWARE >>>
+            // REMOVED: \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class, 
+            // This is ONLY for session-based SPAs. We are using stateless API Tokens now.
+            // <<< END FIX 2 >>>
+
             \Illuminate\Routing\Middleware\ThrottleRequests::class.':api',
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
         ],
@@ -65,5 +74,6 @@ class Kernel extends HttpKernel
         'signed' => \App\Http\Middleware\ValidateSignature::class,
         'throttle' => \Illuminate\Routing\Middleware\ThrottleRequests::class,
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
+        'role' => \App\Http\Middleware\RoleMiddleware::class,
     ];
 }
