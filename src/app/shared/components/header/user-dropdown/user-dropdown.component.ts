@@ -36,6 +36,8 @@ export class UserDropdownComponent {
       },
       error: (err) => {
         console.error('Logout failed', err);
+        (this.authService as any).clearUserData();
+        this.router.navigate(['/signin']);
       }
     });
   }

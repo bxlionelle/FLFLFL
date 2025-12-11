@@ -1,0 +1,23 @@
+// src/app/interceptors/auth-token.interceptor.ts
+
+import { HttpInterceptorFn } from '@angular/common/http';
+import { inject } from '@angular/core';
+
+export const authTokenInterceptor: HttpInterceptorFn = (req, next) => {
+    // NOTE: Using 'token' key as defined in your provided code
+    const token = localStorage.getItem('token'); 
+
+    // Skip adding the token for the login/register requests
+    const isAuthRoute = req.url.includes('/login') || req.url.includes('/register');
+
+    if (token && !isAuthRoute) {
+        const cloned = req.clone({
+            setHeaders: {
+                Authorization: `Bearer ${token}` // Standard Laravel Sanctum/JWT header
+            }
+        });
+        return next(cloned);
+    }
+
+    return next(req);
+};

@@ -9,6 +9,9 @@ import { BasicTablesComponent } from './pages/tables/basic-tables/basic-tables.c
 import { AppLayoutComponent } from './shared/layout/app-layout/app-layout.component';
 import { SignInComponent } from './pages/auth-pages/sign-in/sign-in.component';
 import { authGuard } from './services/auth.guard';
+import { TeamMemberComponent } from './pages/team-members/team-members.component'; // <--- ADD THIS LINE
+import { ExpensesComponent } from './pages/expenses/expenses.component';
+import { ProjectManagementComponent } from './pages/project-management/project-management.component';
 
 export const routes: Routes = [
   {
@@ -23,10 +26,30 @@ export const routes: Routes = [
         title: 'FlowTrack - Checche',
       },
       {
+        path: 'task',
+        component: TeamMemberComponent,
+        title: 'FlowTrack - Task Management',
+      },
+      
+      {
         path:'permissions',
-        component:PermissionComponent,
+        component: PermissionComponent,
         title: 'FlowTrack - Checche',
       },
+
+      {
+        path: 'expenses', 
+        component: ExpensesComponent,
+        title: 'FlowTrack - Expenses',
+      },
+
+      {
+        path: 'project-management',
+        component: ProjectManagementComponent,
+        title: 'FlowTrack - Projects',
+      },
+      
+      
       {
         path:'roles',
         component:RolesComponent,
