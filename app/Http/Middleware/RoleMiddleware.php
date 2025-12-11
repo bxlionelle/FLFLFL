@@ -8,24 +8,23 @@ use Symfony\Component\HttpFoundation\Response;
 
 class RoleMiddleware
 {
-    /**
-     * Handle an incoming request.
-     *
-     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
-     */
     public function handle(Request $request, Closure $next, ...$roles): Response
     {
-        // 1. Check if the user is authenticated
+        // <<< CRITICAL FIX: Allow OPTIONS preflight to pass through immediately. >>>
+        if ($request->isMethod('OPTIONS')) {
+            return $next($request);
+        }
+        // <<< END CRITICAL FIX >>>
+        
+        // 1. Check if the user is authenticated (The logic is now correct for non-OPTIONS methods)
         if (! $request->user()) {
-            // Returns a 401 Unauthorized response if the user is not logged in
             return response()->json(['message' => 'Unauthenticated.'], 401);
         }
 
-        // 2. Get the authenticated user's role (assuming your User model has a 'role' or a roles relationship)
+        // 2. Get the authenticated user's role
         $userRole = $request->user()->role ? $request->user()->role->name : null;
         
         // 3. Check if the user's role is included in the list of allowed roles
-        // We convert the user's role to lowercase for case-insensitive matching
         if (in_array(strtolower($userRole), $roles)) {
             return $next($request); // Access granted
         }

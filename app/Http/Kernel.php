@@ -14,19 +14,12 @@ class Kernel extends HttpKernel
      * @var array<int, class-string|string>
      */
     protected $middleware = [
-        // \App\Http\Middleware\TrustHosts::class,
+        \Illuminate\Http\Middleware\HandleCors::class,
         \App\Http\Middleware\TrustProxies::class,
-        
-        // <<< FIX 1: CORRECT CORS MIDDLEWARE >>>
-        // REPLACED \Illuminate\Http\Middleware\HandleCors::class
-        \Fruitcake\Cors\HandleCors::class, 
-        // <<< END FIX 1 >>>
-        
         \App\Http\Middleware\PreventRequestsDuringMaintenance::class,
         \Illuminate\Foundation\Http\Middleware\ValidatePostSize::class,
         \App\Http\Middleware\TrimStrings::class,
         \Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull::class,
-        //\App\Http\Middleware\RoleMiddleware::class,
     ];
 
     /**
@@ -45,11 +38,6 @@ class Kernel extends HttpKernel
         ],
 
         'api' => [
-            // <<< FIX 2: REMOVE SESSION STATE MIDDLEWARE >>>
-            // REMOVED: \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class, 
-            // This is ONLY for session-based SPAs. We are using stateless API Tokens now.
-            // <<< END FIX 2 >>>
-
             \Illuminate\Routing\Middleware\ThrottleRequests::class.':api',
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
         ],
