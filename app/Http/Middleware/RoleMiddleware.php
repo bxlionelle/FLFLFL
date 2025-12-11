@@ -10,26 +10,25 @@ class RoleMiddleware
 {
     public function handle(Request $request, Closure $next, ...$roles): Response
     {
-        // <<< CRITICAL FIX: Allow OPTIONS preflight to pass through immediately. >>>
         if ($request->isMethod('OPTIONS')) {
             return $next($request);
         }
-        // <<< END CRITICAL FIX >>>
         
-        // 1. Check if the user is authenticated (The logic is now correct for non-OPTIONS methods)
-        if (! $request->user()) {
+        if (!$request->user()) {
             return response()->json(['message' => 'Unauthenticated.'], 401);
         }
 
-        // 2. Get the authenticated user's role
-        $userRole = $request->user()->role ? $request->user()->role->name : null;
-        
-        // 3. Check if the user's role is included in the list of allowed roles
-        if (in_array(strtolower($userRole), $roles)) {
-            return $next($request); // Access granted
+        // Check if user has any of the required roles
+        foreach ($roles as $role) {
+            if ($request->user()->hasRole($role)) {
+                return $next($request);
+            }
         }
 
-        // 4. Access denied
-        return response()->json(['message' => 'Forbidden. You do not have the required role.'], 403);
+        return response()->json([
+            'message' => 'Forbidden. You do not have the required role.',
+            'required_roles' => $roles,
+            'your_roles' => $request->user()->roles->pluck('name')
+        ], 403);
     }
 }

@@ -28,8 +28,9 @@ Route::middleware('auth:sanctum')->group(function () {
 });
 
 Route::middleware(['auth:sanctum', 'role:administrator'])->group(function () {
-    Route::apiResource('users', UserController::class); 
+
     Route::get('users/count/total', [UserController::class, 'getUserCount']);
+    Route::apiResource('users', UserController::class); 
     
     Route::get('/roles', [RolesController::class, 'getRoles']);
     Route::post('/create-roles', [RolesController::class, 'createRole']);
@@ -41,9 +42,7 @@ Route::middleware(['auth:sanctum', 'role:administrator,project_manager'])->group
 });
 
 Route::middleware(['auth:sanctum', 'role:administrator,project_manager,member'])->group(function () {
-    
     Route::apiResource('tasks', TaskController::class);
-
     Route::apiResource('expenses', ExpenseController::class);
 });
 

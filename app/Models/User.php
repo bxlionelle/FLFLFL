@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -28,7 +27,7 @@ class User extends Authenticatable
         'bio',
         'is_active',
         'password',
-        'role_id',
+        // 'role_id', // Remove this - Spatie uses model_has_roles table instead
     ];
 
     /**
@@ -49,5 +48,15 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
+        'is_active' => 'boolean',
     ];
+
+    /**
+     * Get the user's full name.
+     */
+    public function getFullNameAttribute(): string
+    {
+        $name = trim("{$this->firstname} {$this->middlename} {$this->lastname}");
+        return preg_replace('/\s+/', ' ', $name);
+    }
 }

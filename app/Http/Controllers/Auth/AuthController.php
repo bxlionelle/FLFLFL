@@ -18,7 +18,6 @@ class AuthController extends Controller
      */
     public function store(StoreUserRequest $request)
     {
-        // ... (No changes here, registration logic remains the same)
         $validated = $request->validated();
 
         $roleId = $validated['role_id'] ?? null;
@@ -32,40 +31,75 @@ class AuthController extends Controller
         if ($roleId) {
             $role = Role::findOrFail($roleId);
             $user->assignRole($role->name);
+        } else {
+            $user->assignRole('member'); // Default role
         }
 
+        // Create token for new user
+        $token = $user->createToken('auth_token')->plainTextToken;
+
         return response()->json([
+            'success' => true,
+            'access_token' => $token,  // ✅ Changed from 'token' to 'access_token'
+            'token_type' => 'Bearer',
             'user' => $user->load('roles')
         ], 201);
     }
 
     /**
-     * Sanctum API Token Login (UPDATED)
+     * Sanctum API Token Login (FIXED)
      */
     public function login(LoginUserRequest $request)
     {
         $credentials = $request->only('email', 'password');
 
         if (!Auth::attempt($credentials)) {
-            // Returns 401 Unauthorized if credentials fail
-            return response()->json(['message' => 'Invalid credentials'], 401);
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid credentials'
+            ], 401);
         }
 
-        // --- API TOKEN GENERATION ---
         $user = Auth::user();
-        
-        // 1. Determine the user's primary role for the token name/abilities
-        $roleName = $user->getRoleNames()->first() ?? 'plain-token';
 
-        // 2. Create a new token (you can customize the abilities array)
-        $token = $user->createToken($roleName, ['server:read', 'server:write'])->plainTextToken;
+        // Check if user is active
+        if (!$user->is_active) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Your account has been deactivated'
+            ], 403);
+        }
 
-        // 3. Return the token and user data
+        // Delete old tokens (optional - for security)
+        $user->tokens()->delete();
+
+        // Create new token
+        $token = $user->createToken('auth_token')->plainTextToken;
+
+        // Load roles
+        $user->load('roles');
+
         return response()->json([
-            'user' => $user->load('roles'),
-            'token' => $token, // <-- NEW: The Angular frontend will store this
+            'success' => true,
+            'access_token' => $token,  // ✅ Changed from 'token' to 'access_token'
+            'token_type' => 'Bearer',
+            'user' => [
+                'id' => $user->id,
+                'firstname' => $user->firstname,
+                'middlename' => $user->middlename,
+                'lastname' => $user->lastname,
+                'email' => $user->email,
+                'phone' => $user->phone,
+                'address' => $user->address,
+                'bio' => $user->bio,
+                'is_active' => $user->is_active,
+                'role' => $user->roles->first(), // First role as object
+                'roles' => $user->roles->map(fn($role) => [
+                    'id' => $role->id,
+                    'name' => $role->name,
+                ]),
+            ],
         ]);
-        // --- END API TOKEN GENERATION ---
     }
 
     /**
@@ -73,19 +107,22 @@ class AuthController extends Controller
      */
     public function user(Request $request)
     {
-        return response()->json($request->user()->load('roles'));
+        return response()->json([
+            'success' => true,
+            'user' => $request->user()->load('roles')
+        ]);
     }
 
     /**
-     * Sanctum API Token Logout (UPDATED)
+     * Sanctum API Token Logout
      */
     public function destroy(Request $request)
     {
-        // --- API TOKEN REVOCATION ---
-        // Revoke the token that was used to authenticate the current request
         $request->user()->currentAccessToken()->delete();
 
-        return response()->json(['message' => 'Token revoked, user logged out']);
-        // --- END API TOKEN REVOCATION ---
+        return response()->json([
+            'success' => true,
+            'message' => 'Logged out successfully'
+        ]);
     }
 }
