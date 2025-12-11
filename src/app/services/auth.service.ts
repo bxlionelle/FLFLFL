@@ -27,36 +27,45 @@ export class AuthService {
   }
 
   // Store user and token in localStorage and update observable
-  // NEW: Accepts and stores the token
   private setUserData(user: User, token: string): void {
     localStorage.setItem('currentUser', JSON.stringify(user));
-    localStorage.setItem('token', token); // <-- Store the Token
+    localStorage.setItem('token', token);
     this.currentUserSubject.next(user);
+    console.log('✅ User and token stored:', { email: user.email, token: token.substring(0, 20) + '...' });
   }
 
   // Clear user data and token
   private clearUserData(): void {
     localStorage.removeItem('currentUser');
-    localStorage.removeItem('token'); // <-- Clear the Token
+    localStorage.removeItem('token');
     this.currentUserSubject.next(null);
+    console.log('🗑️ User data and token cleared');
   }
 
-  // 🆕 NEW METHOD: User Registration (Kept existing, but removed withCredentials if token flow is used)
+  // User Registration
   register(userData: any): Observable<any> {
-    // Note: If you want registration to use the token flow, remove withCredentials: true
-    return this.http.post(`${this.apiUrl}/api/register`, userData); // Assumed /api/register route
+    return this.http.post(`${this.apiUrl}/register`, userData).pipe(
+      tap((response: any) => {
+        console.log('📝 Registration response:', response);
+        // Handle registration response if it returns token
+        if (response.user && response.access_token) {
+          this.setUserData(response.user, response.access_token);
+        }
+      })
+    );
   }
 
-  // REMOVED: getCsrf() is removed as it's for the old session flow.
-
-  // UPDATED: Login (NOW DIRECTLY POSTS TO API AND RECEIVES TOKEN)
+  // FIXED: Login (Now looks for 'access_token' instead of 'token')
   login(credentials: { email: string; password: string }): Observable<any> {
-    // Note: Removed withCredentials: true
-    return this.http.post(`${this.apiUrl}/api/login`, credentials).pipe(
+    return this.http.post(`${this.apiUrl}/login`, credentials).pipe(
       tap((response: any) => {
-        // Check for both user and the new token property from the Laravel response
-        if (response.user && response.token) {
-          this.setUserData(response.user, response.token); // Pass both to store
+        console.log('🔐 Login response:', response);
+        
+        // ✅ FIXED: Check for 'access_token' (what Laravel returns)
+        if (response.user && response.access_token) {
+          this.setUserData(response.user, response.access_token);
+        } else {
+          console.error('❌ Login response missing user or access_token:', response);
         }
       })
     );
@@ -64,28 +73,40 @@ export class AuthService {
 
   // Get current logged-in user
   getUser(): Observable<User> {
-    // The TokenInterceptor will attach the Bearer token
-    return this.http.get<User>(`${this.apiUrl}/api/user`).pipe( 
-      // If successful, reset user data/token in case the token was only in memory
-      tap((user: User) => this.setUserData(user, localStorage.getItem('token') || '')) 
+    return this.http.get<User>(`${this.apiUrl}/user`).pipe(
+      tap((user: User) => {
+        const token = localStorage.getItem('token');
+        if (token) {
+          this.setUserData(user, token);
+        }
+      })
     );
   }
 
-  // UPDATED: Logout user (now revokes token on backend)
+  // Logout user
   logout(): Observable<any> {
-    // The TokenInterceptor will attach the valid token to this request
-    return this.http.post(`${this.apiUrl}/api/logout`, {}).pipe(
-      tap(() => this.clearUserData()) // Clear token and user data on success
+    return this.http.post(`${this.apiUrl}/logout`, {}).pipe(
+      tap(() => this.clearUserData())
     );
   }
 
-  // Helper: get user's role (no change)
+  // Helper: get token
+  getToken(): string | null {
+    return localStorage.getItem('token');
+  }
+
+  // Helper: check if authenticated
+  isAuthenticated(): boolean {
+    return !!this.getToken();
+  }
+
+  // Helper: get user's role
   getUserRole(): string | null {
     const user = this.currentUserSubject.value;
     return user?.role?.name?.toLowerCase() || user?.roles?.[0]?.name?.toLowerCase() || null;
   }
 
-  // Helper: check if user has a role (no change)
+  // Helper: check if user has a role
   hasRole(roleName: string): boolean {
     return this.getUserRole() === roleName.toLowerCase();
   }
