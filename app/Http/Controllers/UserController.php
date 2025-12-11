@@ -89,6 +89,69 @@ class UserController extends Controller
     }
 
     /**
+     * Update the authenticated user's profile.
+     */
+    public function updateProfile(Request $request)
+    {
+        try {
+            $user = $request->user();
+            
+            $validated = $request->validate([
+                'firstname' => 'sometimes|string|max:255',
+                'middlename' => 'nullable|string|max:255',
+                'lastname' => 'sometimes|string|max:255',
+                'email' => 'sometimes|email|unique:users,email,' . $user->id,
+                'phone' => 'nullable|string|max:20',
+                'address' => 'nullable|string',
+                'bio' => 'nullable|string',
+            ]);
+            
+            // Update only the fields that were provided
+            $user->update($validated);
+            
+            // Reload the user with relationships
+            $user->load('roles');
+            
+            $transformedUser = [
+                'id' => $user->id,
+                'firstname' => $user->firstname,
+                'middlename' => $user->middlename,
+                'lastname' => $user->lastname,
+                'email' => $user->email,
+                'phone' => $user->phone,
+                'address' => $user->address,
+                'bio' => $user->bio,
+                'is_active' => $user->is_active,
+                'role_id' => $user->roles->first()?->id,
+                'role' => $user->roles->first() ? [
+                    'id' => $user->roles->first()->id,
+                    'name' => $user->roles->first()->name,
+                ] : null,
+                'roles' => $user->roles,
+            ];
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Profile updated successfully',
+                'user' => $transformedUser
+            ], 200);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            \Log::error('Error updating profile: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update profile',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
      * Update the specified resource in storage.
      */
     public function update(Request $request, string $id)

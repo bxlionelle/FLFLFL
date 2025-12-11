@@ -25,6 +25,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'destroy']);
     Route::get('/dashboard', [DashboardController::class, 'summary']);
     Route::get('/project-details/{project}', [ProjectController::class, 'showDetails']);
+    
+    // User profile update - accessible to all authenticated users
+    Route::put('/user/profile', [UserController::class, 'updateProfile']);
 });
 
 Route::middleware(['auth:sanctum', 'role:administrator'])->group(function () {
