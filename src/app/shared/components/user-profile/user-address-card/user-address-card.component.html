@@ -10,7 +10,7 @@
             Country
           </p>
           <p class="text-sm font-medium text-gray-800 dark:text-white/90">
-            {{ address.country }}
+            {{ addressData?.country || 'N/A' }}
           </p>
         </div>
         <div>
@@ -18,7 +18,7 @@
             City/State
           </p>
           <p class="text-sm font-medium text-gray-800 dark:text-white/90">
-            {{ address.cityState }}
+            {{ addressData?.cityState || 'N/A' }}
           </p>
         </div>
         <div>
@@ -26,7 +26,7 @@
             Postal Code
           </p>
           <p class="text-sm font-medium text-gray-800 dark:text-white/90">
-            {{ address.postalCode }}
+            {{ addressData?.postalCode || 'N/A' }}
           </p>
         </div>
         <div>
@@ -34,7 +34,7 @@
             TAX ID
           </p>
           <p class="text-sm font-medium text-gray-800 dark:text-white/90">
-            {{ address.taxId }}
+            {{ addressData?.taxId || 'N/A' }}
           </p>
         </div>
       </div>
@@ -74,7 +74,7 @@
           Edit Address
         </h4>
         <p class="mb-6 text-sm text-gray-500 dark:text-gray-400 lg:mb-7">
-          Update your details to keep your profile up-to-date.
+          Update your address details to keep your profile up-to-date.
         </p>
       </div>
       <form class="flex flex-col" (ngSubmit)="handleSave()">
@@ -82,19 +82,43 @@
           <div class="grid grid-cols-1 gap-x-6 gap-y-5 lg:grid-cols-2">
             <div>
               <app-label>Country</app-label>
-
+              <input
+                type="text"
+                [(ngModel)]="editAddress.country"
+                name="country"
+                class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                placeholder="Enter country"
+              />
             </div>
             <div>
               <app-label>City/State</app-label>
-
+              <input
+                type="text"
+                [(ngModel)]="editAddress.cityState"
+                name="cityState"
+                class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                placeholder="Enter city/state"
+              />
             </div>
             <div>
               <app-label>Postal Code</app-label>
-
+              <input
+                type="text"
+                [(ngModel)]="editAddress.postalCode"
+                name="postalCode"
+                class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                placeholder="Enter postal code"
+              />
             </div>
             <div>
               <app-label>TAX ID</app-label>
-
+              <input
+                type="text"
+                [(ngModel)]="editAddress.taxId"
+                name="taxId"
+                class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                placeholder="Enter TAX ID"
+              />
             </div>
           </div>
         </div>

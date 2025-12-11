@@ -83,6 +83,22 @@ export class AuthService {
     );
   }
 
+  // Update user profile
+  updateUserProfile(userData: Partial<User>): Observable<any> {
+    return this.http.put<any>(`${this.apiUrl}/user/profile`, userData).pipe(
+      tap((response: any) => {
+        console.log('✅ Profile updated:', response);
+        // Laravel returns { success: true, user: {...} }
+        if (response.user) {
+          const token = localStorage.getItem('token');
+          if (token) {
+            this.setUserData(response.user, token);
+          }
+        }
+      })
+    );
+  }
+
   // Logout user
   logout(): Observable<any> {
     return this.http.post(`${this.apiUrl}/logout`, {}).pipe(
@@ -109,5 +125,10 @@ export class AuthService {
   // Helper: check if user has a role
   hasRole(roleName: string): boolean {
     return this.getUserRole() === roleName.toLowerCase();
+  }
+
+  // Helper: get current user value (synchronous)
+  getCurrentUser(): User | null {
+    return this.currentUserSubject.value;
   }
 }

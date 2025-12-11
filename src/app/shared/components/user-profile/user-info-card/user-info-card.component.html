@@ -10,7 +10,7 @@
             First Name
           </p>
           <p class="text-sm font-medium text-gray-800 dark:text-white/90">
-            {{ user.firstName }}
+            {{ currentUser?.firstname || 'N/A' }}
           </p>
         </div>
         <div>
@@ -18,7 +18,7 @@
             Last Name
           </p>
           <p class="text-sm font-medium text-gray-800 dark:text-white/90">
-            {{ user.lastName }}
+            {{ currentUser?.lastname || 'N/A' }}
           </p>
         </div>
         <div>
@@ -26,7 +26,7 @@
             Email address
           </p>
           <p class="text-sm font-medium text-gray-800 dark:text-white/90">
-            {{ user.email }}
+            {{ currentUser?.email || 'N/A' }}
           </p>
         </div>
         <div>
@@ -34,15 +34,23 @@
             Phone
           </p>
           <p class="text-sm font-medium text-gray-800 dark:text-white/90">
-            {{ user.phone }}
+            {{ currentUser?.phone || 'N/A' }}
           </p>
         </div>
-        <div>
+        <div class="col-span-1 lg:col-span-2">
+          <p class="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">
+            Address
+          </p>
+          <p class="text-sm font-medium text-gray-800 dark:text-white/90">
+            {{ currentUser?.address || 'N/A' }}
+          </p>
+        </div>
+        <div class="col-span-1 lg:col-span-2">
           <p class="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">
             Bio
           </p>
           <p class="text-sm font-medium text-gray-800 dark:text-white/90">
-            {{ user.bio }}
+            {{ currentUser?.bio || 'N/A' }}
           </p>
         </div>
       </div>
@@ -89,50 +97,68 @@
         <div class="custom-scrollbar h-[450px] overflow-y-auto px-2 pb-3">
           <div>
             <h5 class="mb-5 text-lg font-medium text-gray-800 dark:text-white/90 lg:mb-6">
-              Social Links
-            </h5>
-            <div class="grid grid-cols-1 gap-x-6 gap-y-5 lg:grid-cols-2">
-              <div>
-                <app-label>Facebook</app-label>
-
-              </div>
-              <div>
-                <app-label>X.com</app-label>
-
-              </div>
-              <div>
-                <app-label>Linkedin</app-label>
-
-              </div>
-              <div>
-                <app-label>Instagram</app-label>
-
-              </div>
-            </div>
-          </div>
-          <div class="mt-7">
-            <h5 class="mb-5 text-lg font-medium text-gray-800 dark:text-white/90 lg:mb-6">
               Personal Information
             </h5>
             <div class="grid grid-cols-1 gap-x-6 gap-y-5 lg:grid-cols-2">
               <div class="col-span-2 lg:col-span-1">
                 <app-label>First Name</app-label>
-
+                <input
+                  type="text"
+                  [(ngModel)]="editUser.firstname"
+                  name="firstname"
+                  class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                  placeholder="Enter first name"
+                />
               </div>
               <div class="col-span-2 lg:col-span-1">
                 <app-label>Last Name</app-label>
-
+                <input
+                  type="text"
+                  [(ngModel)]="editUser.lastname"
+                  name="lastname"
+                  class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                  placeholder="Enter last name"
+                />
               </div>
               <div class="col-span-2 lg:col-span-1">
                 <app-label>Email Address</app-label>
+                <input
+                  type="email"
+                  [(ngModel)]="editUser.email"
+                  name="email"
+                  class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                  placeholder="Enter email address"
+                />
               </div>
               <div class="col-span-2 lg:col-span-1">
                 <app-label>Phone</app-label>
-
+                <input
+                  type="tel"
+                  [(ngModel)]="editUser.phone"
+                  name="phone"
+                  class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                  placeholder="Enter phone number"
+                />
+              </div>
+              <div class="col-span-2">
+                <app-label>Address</app-label>
+                <input
+                  type="text"
+                  [(ngModel)]="editUser.address"
+                  name="address"
+                  class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                  placeholder="Enter address"
+                />
               </div>
               <div class="col-span-2">
                 <app-label>Bio</app-label>
-
+                <textarea
+                  [(ngModel)]="editUser.bio"
+                  name="bio"
+                  rows="3"
+                  class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                  placeholder="Enter bio"
+                ></textarea>
               </div>
             </div>
           </div>

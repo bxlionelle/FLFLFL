@@ -1,10 +1,12 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { ModalService } from '../../../services/modal.service';
 import { CommonModule } from '@angular/common';
 import { InputFieldComponent } from '../../form/input/input-field.component';
 import { ButtonComponent } from '../../ui/button/button.component';
 import { LabelComponent } from '../../form/label/label.component';
 import { ModalComponent } from '../../ui/modal/modal.component';
+import { AuthService } from '../../../../services/auth.service';
+import { FormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-user-info-card',
@@ -14,35 +16,61 @@ import { ModalComponent } from '../../ui/modal/modal.component';
     ButtonComponent,
     LabelComponent,
     ModalComponent,
+    FormsModule,
   ],
   templateUrl: './user-info-card.component.html',
   styles: ``
 })
-export class UserInfoCardComponent {
-
-  constructor(public modal: ModalService) {}
-
+export class UserInfoCardComponent implements OnInit {
+  currentUser: any = null;
+  editUser: any = {};
   isOpen = false;
-  openModal() { this.isOpen = true; }
-  closeModal() { this.isOpen = false; }
 
-  user = {
-    firstName: 'Musharof',
-    lastName: 'Chowdhury',
-    email: 'randomuser@pimjo.com',
-    phone: '+09 363 398 46',
-    bio: 'Team Manager',
-    social: {
-      facebook: 'https://www.facebook.com/PimjoHQ',
-      x: 'https://x.com/PimjoHQ',
-      linkedin: 'https://www.linkedin.com/company/pimjo',
-      instagram: 'https://instagram.com/PimjoHQ',
-    },
-  };
+  constructor(
+    public modal: ModalService,
+    private authService: AuthService
+  ) {}
 
-  handleSave() {
-    // Handle save logic here
-    console.log('Saving changes...');
-    this.modal.closeModal();
+  ngOnInit(): void {
+    this.loadCurrentUser();
+  }
+
+  loadCurrentUser(): void {
+    // Get the current user from AuthService
+    this.authService.currentUser$.subscribe(user => {
+      if (user) {
+        this.currentUser = user;
+      }
+    });
+  }
+
+  openModal(): void {
+    // Create a copy of current user for editing
+    this.editUser = { ...this.currentUser };
+    this.isOpen = true;
+  }
+
+  closeModal(): void {
+    this.isOpen = false;
+    this.editUser = {};
+  }
+
+  handleSave(): void {
+    // Update the current user with edited values
+    if (this.editUser) {
+      // Update via AuthService or API
+      this.authService.updateUserProfile(this.editUser).subscribe({
+        next: (response) => {
+          console.log('Profile updated successfully', response);
+          // Laravel returns { success: true, user: {...} }
+          this.currentUser = response.user;
+          this.closeModal();
+        },
+        error: (error) => {
+          console.error('Error updating profile:', error);
+          // Handle error (show toast notification, etc.)
+        }
+      });
+    }
   }
 }

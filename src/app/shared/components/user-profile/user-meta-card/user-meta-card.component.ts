@@ -5,6 +5,7 @@ import { CommonModule } from '@angular/common';
 import { ModalComponent } from '../../ui/modal/modal.component';
 import { ButtonComponent } from '../../ui/button/button.component';
 import { AuthService } from '../../../../services/auth.service';
+import { FormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-user-meta-card',
@@ -13,71 +14,67 @@ import { AuthService } from '../../../../services/auth.service';
     ModalComponent,
     InputFieldComponent,
     ButtonComponent,
+    FormsModule,
   ],
   templateUrl: './user-meta-card.component.html',
   styles: ``
 })
 export class UserMetaCardComponent implements OnInit {
+  currentUser: any = null;
+  editUser: any = {};
+  isOpen = false;
+
   constructor(
     public modal: ModalService,
-    private authService: AuthService // Inject your auth service
+    private authService: AuthService
   ) {}
 
-  isOpen = false;
-  user: any = null; // Will hold the current user data
-  loading = true;
+  ngOnInit(): void {
+    this.loadCurrentUser();
+  }
 
-  ngOnInit() {
-    // Get the current logged-in user
-    this.authService.currentUser$.subscribe({
-      next: (userData) => {
-        if (userData) {
-          this.user = {
-            firstName: userData.firstName || userData.first_name || '',
-            lastName: userData.lastName || userData.last_name || '',
-            role: userData.role || 'User',
-            location: userData.location || '',
-            avatar: userData.avatar || userData.profileImage || '/assets/images/default-avatar.png',
-             //social: {
-              facebook: userData.social?.facebook || userData.facebookUrl || '',
-              x: userData.social?.x || userData.twitterUrl || '',
-              linkedin: userData.social?.linkedin || userData.linkedinUrl || '',
-              instagram: userData.social?.instagram || userData.instagramUrl || '',
-            //},
-            email: userData.email || '',
-            phone: userData.phone || userData.phoneNumber || '',
-            bio: userData.bio || userData.description || '',
-          };
+  loadCurrentUser(): void {
+    // Get the current user from AuthService
+    this.authService.currentUser$.subscribe(user => {
+      if (user) {
+        this.currentUser = user;
+      }
+    });
+
+    // Alternative: If you store user in localStorage
+    // const userStr = localStorage.getItem('currentUser');
+    // if (userStr) {
+    //   this.currentUser = JSON.parse(userStr);
+    // }
+  }
+
+  openModal(): void {
+    // Create a copy of current user for editing
+    this.editUser = { ...this.currentUser };
+    this.isOpen = true;
+  }
+
+  closeModal(): void {
+    this.isOpen = false;
+    this.editUser = {};
+  }
+
+  handleSave(): void {
+    // Update the current user with edited values
+    if (this.editUser) {
+      // Update via AuthService or API
+      this.authService.updateUserProfile(this.editUser).subscribe({
+        next: (response) => {
+          console.log('Profile updated successfully', response);
+          // Laravel returns { success: true, user: {...} }
+          this.currentUser = response.user;
+          this.closeModal();
+        },
+        error: (error) => {
+          console.error('Error updating profile:', error);
+          // Handle error (show toast notification, etc.)
         }
-        this.loading = false;
-      },
-      error: (error) => {
-        console.error('Error fetching user data:', error);
-        this.loading = false;
-      }
-    });
-  }
-
-  openModal() { 
-    this.isOpen = true; 
-  }
-
-  closeModal() { 
-    this.isOpen = false; 
-  }
-
-  handleSave() {
-    // Handle save logic here - update user in backend
-    console.log('Saving changes...', this.user);
-    
-    this.authService.updateUserProfile(this.user).subscribe({
-      next: (response) => {
-        console.log('Profile updated successfully');
-        this.closeModal();
-      },
-      error: (error) => {
-        console.error('Error updating profile:', error);
-      }
-    });
+      });
+    }
   }
 }
