@@ -44,14 +44,12 @@ export class AppSidebarComponent {
         { name: "Users", path: "/users" },
       ],
     },
-    /** 
     {
       icon: `<svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"> <rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" stroke-width="2" fill="none"/> <line x1="7" y1="9" x2="17" y2="9" stroke="currentColor" stroke-width="2" stroke-linecap="round"/> <line x1="7" y1="13" x2="17" y2="13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/> <line x1="7" y1="17" x2="13" y2="17" stroke="currentColor" stroke-width="2" stroke-linecap="round"/> <circle cx="5" cy="9" r="1" fill="currentColor"/> <circle cx="5" cy="13" r="1" fill="currentColor"/> <circle cx="5" cy="17" r="1" fill="currentColor"/> </svg>`,
       name: "Project Management",
       path: "/project-management",
       roles: ['project_manager']
     },
-    */
     {
       icon: `<svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"> <circle cx="6.5" cy="9" r="2" stroke="currentColor" stroke-width="1.5" fill="none"/> <path d="M4 17c0-1.5 3-2 4.5-2s4.5.5 4.5 2v1H4v-1z" stroke="currentColor" stroke-width="1.5" fill="none"/> <circle cx="12" cy="7" r="2.5" stroke="currentColor" stroke-width="1.5" fill="none"/> <path d="M9 18c0-2 6-2 6 0v1H9v-1z" stroke="currentColor" stroke-width="1.5" fill="none"/> <circle cx="17.5" cy="9" r="2" stroke="currentColor" stroke-width="1.5" fill="none"/> <path d="M15 17c0-1.5 3-2 4.5-2S24 15.5 24 17v1h-9v-1z" stroke="currentColor" stroke-width="1.5" fill="none"/> </svg>`,
       name: "Team Management",
@@ -61,7 +59,7 @@ export class AppSidebarComponent {
     {
       icon: `<svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"> <rect x="3" y="6" width="18" height="12" rx="2" stroke="currentColor" stroke-width="2" fill="none"/> <path d="M3 9h18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/> <path d="M12 8v8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/> <path d="M10 10h4a1 1 0 010 2h-3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/> <path d="M10 14h4a1 1 0 000-2h-3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`,
       name: "Task at the same time Proj Mngt",
-      path: "/task",
+      path: "/team-members",
       roles: ['member', 'project_manager'] 
     },
     {
@@ -160,7 +158,7 @@ export class AppSidebarComponent {
   }
 
   isActive(path: string): boolean {
-    return this.router.url === path;
+    return this.router.url.startsWith(path);
   }
 
   toggleSubmenu(section: string, index: number) {

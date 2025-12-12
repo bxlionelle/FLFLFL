@@ -41,33 +41,31 @@ export class SigninFormComponent {
     this.showPassword = !this.showPassword;
   }
 
-  // ✅ Updated SPA-ready login logic using switchMap
-onSignIn() {
-    const credentials = { email: this.email, password: this.password };
-    
-    // 1. Directly call login (no more CSRF fetching or switchMap needed)
-    this.authService.login(credentials).pipe(
-      
-      // 2. Handle errors from the Login request (401 Unauthorized, 422 Validation, etc.)
-      catchError((loginErr) => {
-        // Your robust error message extraction logic:
-        const message =
-          loginErr.error?.message ||
-          Object.values(loginErr.error?.errors || {})
-            .flat()
-            .join('\n') ||
-          'Unknown login error';
-        
-        alert('Login failed:\n' + message);
-        return EMPTY; // Stop the stream gracefully on login error
-      })
-      
-    ).subscribe({
-      // 3. Final Step: Success handling
-      next: () => {
-        console.log("LOGIN SUCCESS! ATTEMPTING REDIRECT.");
-        this.router.navigate(['/']); // Redirect after successful login
-      }
-    });
-  }
+  // Token-based login (no CSRF, no CORS)
+  onSignIn() {
+    const credentials = { email: this.email, password: this.password };
+
+    this.authService.login(credentials).pipe(
+      catchError((loginErr) => {
+        const message =
+          loginErr.error?.message ||
+          Object.values(loginErr.error?.errors || {})
+            .flat()
+            .join('\n') ||
+          'Unknown login error';
+        alert('Login failed:\n' + message);
+        return EMPTY;
+      })
+    ).subscribe({
+      next: (response: any) => {
+        // Save the access token for protected requests
+        localStorage.setItem('access_token', response.access_token);
+
+        console.log("LOGIN SUCCESS! ATTEMPTING REDIRECT.");
+
+        // Redirect after successful login
+        this.router.navigate(['/']);
+      }
+    });
+  }
 }

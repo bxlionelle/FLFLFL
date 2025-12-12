@@ -47,9 +47,10 @@ export class AuthService {
     return this.http.post(`${this.apiUrl}/register`, userData).pipe(
       tap((response: any) => {
         console.log('📝 Registration response:', response);
-        // Handle registration response if it returns token
-        if (response.user && response.access_token) {
-          this.setUserData(response.user, response.access_token);
+
+        // ❗ IMPORTANT: DO NOT log in a user automatically after admin creates them
+        if (response.user) {
+          console.log('User registered successfully (no auto-login).');
         }
       })
     );

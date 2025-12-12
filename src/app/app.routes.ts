@@ -9,77 +9,72 @@ import { BasicTablesComponent } from './pages/tables/basic-tables/basic-tables.c
 import { AppLayoutComponent } from './shared/layout/app-layout/app-layout.component';
 import { SignInComponent } from './pages/auth-pages/sign-in/sign-in.component';
 import { authGuard } from './services/auth.guard';
-import { TeamMemberComponent } from './pages/team-members/team-members.component'; // <--- ADD THIS LINE
+import { TeamMembersComponent } from './pages/team-members/team-members.component';
 import { ExpensesComponent } from './pages/expenses/expenses.component';
 import { ProjectManagementComponent } from './pages/project-management/project-management.component';
 
 export const routes: Routes = [
   {
-    path:'',
-    component:AppLayoutComponent,
-    canActivate:[authGuard],
-    children:[
+    path: '',
+    component: AppLayoutComponent,
+    canActivate: [authGuard],
+    children: [
       {
         path: '',
         component: EcommerceComponent,
         pathMatch: 'full',
-        title: 'FlowTrack - Checche',
+        title: 'FlowTrack - Dashboard',
       },
       {
-        path: 'task',
-        component: TeamMemberComponent,
+        path: 'team-members',
+        component: TeamMembersComponent,
         title: 'FlowTrack - Task Management',
       },
-      
       {
-        path:'permissions',
+        path: 'permissions',
         component: PermissionComponent,
-        title: 'FlowTrack - Checche',
+        title: 'FlowTrack - Permissions',
       },
-
       {
-        path: 'expenses', 
+        path: 'expenses',
         component: ExpensesComponent,
         title: 'FlowTrack - Expenses',
       },
-
       {
         path: 'project-management',
         component: ProjectManagementComponent,
         title: 'FlowTrack - Projects',
       },
-      
-      
       {
-        path:'roles',
-        component:RolesComponent,
-        title: 'FlowTrack - Checche',
+        path: 'roles',
+        component: RolesComponent,
+        title: 'FlowTrack - Roles',
       },
       {
-        path:'users',
-        component:UserListComponent,
-        title: 'FlowTrack - Checche',
+        path: 'users',
+        component: UserListComponent,
+        title: 'FlowTrack - Users',
       },
       {
-        path:'profile',
-        component:ProfileComponent,
-        title: 'FlowTrack - Checche',
+        path: 'profile',
+        component: ProfileComponent,
+        title: 'FlowTrack - Profile',
       },
       {
-        path:'form-elements',
-        component:FormElementsComponent,
-        title: 'FlowTrack - Checche',
+        path: 'form-elements',
+        component: FormElementsComponent,
+        title: 'FlowTrack - Form Elements',
       },
       {
-        path:'basic-tables',
-        component:BasicTablesComponent,
-        title: 'FlowTrack - Checche',
+        path: 'basic-tables',
+        component: BasicTablesComponent,
+        title: 'FlowTrack - Tables',
       },
     ]
   },
   {
-    path:'signin',
-    component:SignInComponent,
-    title:'Checheche'
+    path: 'signin',
+    component: SignInComponent,
+    title: 'FlowTrack - Sign In',
   },
 ];

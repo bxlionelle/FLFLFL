@@ -6,7 +6,6 @@
       </h1>
     </div>
 
-    <!-- Updated Form -->
     <form (ngSubmit)="onSignIn()" class="space-y-6">
 
       <!-- Email -->
@@ -25,7 +24,6 @@
       <!-- Password -->
       <div class="col-span-1">
         <app-label>Password <span class="text-error-500">*</span></app-label>
-
         <div class="relative">
           <app-input-field
             id="password"
@@ -35,29 +33,29 @@
             name="password"
             required
           />
-          <span
-            (click)="togglePasswordVisibility()"
-            class="absolute z-30 -translate-y-1/2 cursor-pointer right-4 top-1/2"
-          >
-            @if (showPassword) {
-              <!-- Eye Icon -->
-              <svg width="1em" height="1em" class="fill-gray-500 dark:fill-gray-400 size-5" viewBox="0 0 20 20"><path ... /></svg>
-            } @else {
-              <!-- Hidden Icon -->
-              <svg width="1em" height="1em" class="fill-gray-500 dark:fill-gray-400 size-5" viewBox="0 0 20 20"><path ... /></svg>
-            }
+          <span (click)="togglePasswordVisibility()"
+                class="absolute z-30 -translate-y-1/2 cursor-pointer right-4 top-1/2">
+            <ng-container *ngIf="showPassword; else hiddenIcon">
+              <!-- Eye Icon SVG -->
+            </ng-container>
+            <ng-template #hiddenIcon>
+              <!-- Hidden Icon SVG -->
+            </ng-template>
           </span>
         </div>
       </div>
+
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-3">
           <app-checkbox [(checked)]="isChecked" label="Keep me logged in" />
         </div>
-        <a routerLink="/reset-password" class="text-sm text-brand-500 hover:text-brand-600 dark:text-brand-400">
+        <a routerLink="/reset-password"
+           class="text-sm text-brand-500 hover:text-brand-600 dark:text-brand-400">
           Forgot password?
         </a>
       </div>
-      <app-button className="w-full" size="sm" (btnClick)="onSignIn()">
+
+      <app-button class="w-full" size="sm" type="submit">
         Sign in
       </app-button>
     </form>

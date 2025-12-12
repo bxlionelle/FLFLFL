@@ -3,7 +3,6 @@ import { HttpInterceptorFn } from '@angular/common/http';
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const token = localStorage.getItem('token');
   
-  // Add logging for debugging
   if (req.url.includes('/api/')) {
     console.log('🔍 Interceptor:', {
       url: req.url,

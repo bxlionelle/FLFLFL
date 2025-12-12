@@ -1,21 +1,19 @@
-// team-members.component.ts
+// src/app/pages/team-members/team-members.component.ts
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
-import { CdkDragDrop, DragDropModule, moveItemInArray, transferArrayItem } from '@angular/cdk/drag-drop';
-
-interface Task {
-  id: string;
-  title: string;
-  description: string;
-  priority: string;
-  progress: number;
-  assignee: string;
-  tags: string[];
-  status: 'toDo' | 'inProgress' | 'inReview' | 'completed';
-}
+import { Component, OnInit } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import {
+  CdkDragDrop,
+  DragDropModule,
+  moveItemInArray,
+  transferArrayItem,
+} from '@angular/cdk/drag-drop';
+import { ProjectService, Project, User } from '../../services/project.service';
+import { TaskService, Task } from '../../services/task.service';
+import { catchError, forkJoin, finalize, of } from 'rxjs';
 
 interface GanttTask {
-  id: number;
+  id: number | string;
   title: string;
   assignee: string;
   priority: string;
@@ -31,186 +29,355 @@ interface Month {
   date: Date;
 }
 
-interface User {
-  name: string;
-  role: string;
-}
-
 @Component({
   selector: 'app-team-members',
   standalone: true,
-  imports: [
-    CommonModule,
-    DragDropModule
-  ],
+  imports: [CommonModule, DragDropModule, FormsModule],
   templateUrl: './team-members.component.html',
-  styles: ``
 })
-export class TeamMemberComponent {
-  // Current User Information
-  currentUser: User = {
-    name: 'Mike Johnson',
-    role: 'Team Member'
+export class TeamMembersComponent implements OnInit {
+  // ========================================================================
+  // STATE
+  // ========================================================================
+
+  isLoading = true;
+  loadingError: string | null = null;
+
+  currentUser: User = { id: 0, name: 'Loading...', email: '', role: '' };
+  allTasks: Task[] = [];
+  allProjects: Project[] = [];
+  allUsers: User[] = [];
+
+  columns: Record<'toDo' | 'inProgress' | 'inReview' | 'completed', Task[]> = {
+    toDo: [],
+    inProgress: [],
+    inReview: [],
+    completed: [],
   };
 
-  // View state
+  ganttTasks: GanttTask[] = [];
   currentView: 'kanban' | 'gantt' = 'kanban';
-
-  // Kanban Board Columns
-  columns = {
-    toDo: [
-      {
-        id: 'task-1',
-        title: 'Database design',
-        description: 'Design and implement database schema',
-        priority: 'High',
-        progress: 0,
-        assignee: 'JC',
-        tags: ['Database', 'Backend'],
-        status: 'toDo' as const
-      },
-      {
-        id: 'task-2',
-        title: 'Performance optimization',
-        description: 'Optimize loading times and bundle size',
-        priority: 'Medium',
-        progress: 0,
-        assignee: 'MJ',
-        tags: ['Performance'],
-        status: 'toDo' as const
-      }
-    ] as Task[],
-
-    inProgress: [
-      {
-        id: 'task-3',
-        title: 'Frontend development',
-        description: 'Implement responsive homepage...',
-        priority: 'High',
-        progress: 70,
-        assignee: 'MI',
-        tags: ['Development', 'Frontend'],
-        status: 'inProgress' as const
-      },
-      {
-        id: 'task-4',
-        title: 'API Integration Testing',
-        description: 'Test all API endpoints',
-        priority: 'Medium',
-        progress: 45,
-        assignee: 'JO',
-        tags: ['Testing'],
-        status: 'inProgress' as const
-      }
-    ] as Task[],
-
-    inReview: [
-      {
-        id: 'task-5',
-        title: 'User Authentication',
-        description: 'Implement OAuth and JWT authentication',
-        priority: 'High',
-        progress: 90,
-        assignee: 'SW',
-        tags: ['Security', 'Backend'],
-        status: 'inReview' as const
-      }
-    ] as Task[],
-
-    completed: [
-      {
-        id: 'task-6',
-        title: 'Design mockups',
-        description: 'Create high-fidelity mockups for the...',
-        priority: 'High',
-        progress: 100,
-        assignee: 'JC',
-        tags: ['Design', 'UI/UX'],
-        status: 'completed' as const
-      }
-    ] as Task[]
-  };
-
-  // Gantt Chart Data - Linked to Kanban tasks
-  ganttTasks: GanttTask[] = [
-    {
-      id: 1,
-      title: 'Design mockups',
-      assignee: 'Jane Collin',
-      priority: 'High',
-      status: 'Completed',
-      progress: 100,
-      startDate: '2025-01-15',
-      endDate: '2025-02-10',
-      duration: 26
-    },
-    {
-      id: 2,
-      title: 'Frontend development',
-      assignee: 'Mike Johnson',
-      priority: 'High',
-      status: 'In Progress',
-      progress: 70,
-      startDate: '2025-02-01',
-      endDate: '2025-04-15',
-      duration: 73
-    },
-    {
-      id: 3,
-      title: 'API Integration Testing',
-      assignee: 'Jake Owen',
-      priority: 'Medium',
-      status: 'In Progress',
-      progress: 45,
-      startDate: '2025-03-01',
-      endDate: '2025-04-05',
-      duration: 35
-    },
-    {
-      id: 4,
-      title: 'Database design',
-      assignee: 'Jake Chen',
-      priority: 'High',
-      status: 'To Do',
-      progress: 0,
-      startDate: '2025-03-15',
-      endDate: '2025-05-30',
-      duration: 76
-    },
-    {
-      id: 5,
-      title: 'User Authentication',
-      assignee: 'Sarah Williams',
-      priority: 'High',
-      status: 'In Review',
-      progress: 90,
-      startDate: '2025-03-10',
-      endDate: '2025-04-20',
-      duration: 41
-    },
-    {
-      id: 6,
-      title: 'Performance optimization',
-      assignee: 'Mike Johnson',
-      priority: 'Medium',
-      status: 'To Do',
-      progress: 0,
-      startDate: '2025-04-20',
-      endDate: '2025-05-15',
-      duration: 25
-    }
-  ];
 
   months: Month[] = [];
   chartStart: Date = new Date('2025-01-01');
   chartEnd: Date = new Date('2025-06-30');
 
-  constructor() {
-    console.log('Component loaded');
+  // Modal states
+  showProjectModal = false;
+  showTaskModal = false;
+
+  // Form data
+  newProject: Partial<Project> = this.getDefaultProject();
+  newTask: Partial<Task> = this.getDefaultTask();
+
+  // Enums aligned with TaskController
+  private readonly allowedStatuses: Array<'toDo' | 'inProgress' | 'inReview' | 'completed'> =
+    ['toDo', 'inProgress', 'inReview', 'completed'];
+  private readonly allowedPriorities: Array<'Low' | 'Medium' | 'High'> =
+    ['Low', 'Medium', 'High'];
+
+  constructor(
+    private projectService: ProjectService,
+    private taskService: TaskService
+  ) {
     this.generateMonths();
   }
 
-  // View switching methods
+  ngOnInit(): void {
+    console.log('TeamMembersComponent init');
+    this.loadDashboardData();
+  }
+
+  // ========================================================================
+  // DATA LOADING
+  // ========================================================================
+
+  loadDashboardData(): void {
+    this.isLoading = true;
+    this.loadingError = null;
+
+    forkJoin({
+      user: this.projectService.getCurrentUser().pipe(
+        catchError((err) => {
+          console.error('Error loading current user:', err);
+          this.loadingError =
+            'Authentication Error: Could not load user data. Please log in.';
+          return of(null);
+        })
+      ),
+      tasks: this.taskService.getAllTasks().pipe(
+        catchError((err) => {
+          console.error('Error loading tasks:', err);
+          if (!this.loadingError) {
+            this.loadingError = 'Error loading task data from API.';
+          }
+          return of([] as Task[]);
+        })
+      ),
+      projects: this.projectService.getAllProjects().pipe(
+        catchError((err) => {
+          console.error('Error loading projects:', err);
+          return of([] as Project[]);
+        })
+      ),
+      users: this.projectService.getAllUsers().pipe(
+        catchError((err) => {
+          console.error('Error loading users:', err);
+          if (!this.loadingError) {
+            this.loadingError = 'Error loading user data (forbidden).';
+          }
+          return of([] as User[]);
+        })
+      ),
+    })
+      .pipe(finalize(() => (this.isLoading = false)))
+      .subscribe({
+        next: (result) => {
+          const { user, tasks, projects, users } = result;
+
+          if (user) {
+            this.currentUser = user;
+          }
+
+          this.allTasks = tasks || [];
+          this.processData(this.allTasks);
+
+          this.allProjects = projects || [];
+          this.allUsers = users || [];
+
+          console.log('Dashboard loaded:', {
+            currentUser: this.currentUser,
+            tasksCount: this.allTasks.length,
+            projectsCount: this.allProjects.length,
+            usersCount: this.allUsers.length,
+          });
+        },
+        error: (err) => {
+          console.error('Unexpected error in dashboard load:', err);
+          if (!this.loadingError) {
+            this.loadingError = 'An unexpected network error occurred.';
+          }
+        },
+      });
+  }
+
+  // ========================================================================
+  // DEFAULT FORM VALUES
+  // ========================================================================
+
+  private getDefaultProject(): Partial<Project> {
+    const today = new Date();
+    const threeMonthsLater = new Date(today);
+    threeMonthsLater.setMonth(today.getMonth() + 3);
+
+    return {
+      name: '',
+      description: '',
+      status: 'active',
+      start_date: today.toISOString().split('T')[0],
+      end_date: threeMonthsLater.toISOString().split('T')[0],
+      budget: 0,
+    };
+  }
+
+  private getDefaultTask(): Partial<Task> {
+    const today = new Date();
+    const nextWeek = new Date(today);
+    nextWeek.setDate(today.getDate() + 7);
+
+    return {
+      title: '',
+      description: '',
+      priority: 'Medium',
+      status: 'toDo',
+      progress: 0,
+      start_date: today.toISOString().split('T')[0],
+      end_date: nextWeek.toISOString().split('T')[0],
+      tags: [],
+    };
+  }
+
+  // ========================================================================
+  // MODAL CONTROL
+  // ========================================================================
+
+  openProjectModal(): void {
+    if (this.currentUser.role !== 'client') {
+      this.newProject = this.getDefaultProject();
+      this.showProjectModal = true;
+    }
+  }
+
+  closeProjectModal(): void {
+    this.showProjectModal = false;
+    this.newProject = this.getDefaultProject();
+  }
+
+  openTaskModal(): void {
+    if (this.currentUser.role !== 'client') {
+      this.newTask = this.getDefaultTask();
+      this.showTaskModal = true;
+    }
+  }
+
+  closeTaskModal(): void {
+    this.showTaskModal = false;
+    this.newTask = this.getDefaultTask();
+  }
+
+  // ========================================================================
+  // PROJECT CRUD
+  // ========================================================================
+
+  submitProject(): void {
+    if (!this.newProject.name || !this.newProject.start_date) {
+      alert('Please fill in all required fields (name and start date).');
+      return;
+    }
+
+    const payload: any = {
+      name: this.newProject.name,
+      description: this.newProject.description ?? '',
+      status: this.newProject.status ?? 'active',
+      progress: this.newProject.progress ?? 0,
+      start_date: this.newProject.start_date,
+      end_date: this.newProject.end_date ?? null,
+      due_date: this.newProject.end_date ?? null,
+      budget: this.newProject.budget ?? 0,
+      manager_id: this.currentUser.id,
+      client_id: this.newProject.client_id ?? null,
+      team_members: this.newProject.team_members ?? [],
+    };
+
+    this.projectService.createProject(payload as Project).subscribe({
+      next: (res: any) => {
+        const project = res.project ?? res;
+        console.log('Project created:', project);
+        this.allProjects.push(project);
+        this.closeProjectModal();
+      },
+      error: (err) => {
+        console.error('Failed to create project:', err);
+        console.error('Validation errors from API:', err.error);
+        alert('Failed to create project. Please check required fields in the form.');
+      },
+    });
+  }
+
+  // ========================================================================
+  // TASK CRUD
+  // ========================================================================
+
+  submitTask(): void {
+    if (
+      !this.newTask.title ||
+      !this.newTask.project_id ||
+      !this.newTask.assigned_user_id ||
+      !this.newTask.start_date ||
+      !this.newTask.end_date
+    ) {
+      alert(
+        'Please fill in all required fields (title, project, assignee, dates, status, priority).'
+      );
+      return;
+    }
+
+    // Normalize status and priority against backend enums
+    let status = (this.newTask.status as string) || 'toDo';
+    if (!this.allowedStatuses.includes(status as any)) {
+      status = 'toDo';
+    }
+
+    let priority = (this.newTask.priority as string) || 'Medium';
+    if (!this.allowedPriorities.includes(priority as any)) {
+      priority = 'Medium';
+    }
+
+    const payload: any = {
+      project_id: Number(this.newTask.project_id),
+      title: this.newTask.title,
+      description: this.newTask.description ?? '',
+      status,
+      priority,
+      start_date: this.newTask.start_date,
+      end_date: this.newTask.end_date,
+      assigned_user_id: Number(this.newTask.assigned_user_id),
+      progress: this.newTask.progress ?? 0,
+    };
+
+    console.log('TASK PAYLOAD >>>', payload);
+
+    this.taskService.createTask(payload as Task).subscribe({
+      next: (task) => {
+        console.log('Task created:', task);
+        this.allTasks.push(task);
+        this.processData(this.allTasks);
+        this.closeTaskModal();
+      },
+      error: (err) => {
+        console.error('Failed to create task:', err);
+        console.error('Task validation errors:', err.error);
+        alert(
+          'Failed to create task. Please check required fields (title, project, assignee, dates, status, priority).'
+        );
+      },
+    });
+  }
+
+  // ========================================================================
+  // DATA PROCESSING
+  // ========================================================================
+
+  private processData(tasks: Task[]): void {
+    this.columns = { toDo: [], inProgress: [], inReview: [], completed: [] };
+    this.ganttTasks = [];
+
+    tasks.forEach((task) => {
+      if (this.columns[task.status]) {
+        this.columns[task.status].push(task);
+      }
+
+      if (task.start_date && task.end_date) {
+        const start = new Date(task.start_date);
+        const end = new Date(task.end_date);
+        const duration = Math.ceil(
+          (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)
+        );
+
+        this.ganttTasks.push({
+          id: task.id,
+          title: task.title,
+          assignee : (task as any).assignee ?? '',
+          priority: task.priority,
+          status: this.mapStatusForGantt(task.status),
+          progress: task.progress,
+          startDate: task.start_date,
+          endDate: task.end_date,
+          duration,
+        });
+      }
+    });
+  }
+
+  private mapStatusForGantt(
+    status: 'toDo' | 'inProgress' | 'inReview' | 'completed'
+  ): string {
+    switch (status) {
+      case 'toDo':
+        return 'To Do';
+      case 'inProgress':
+        return 'In Progress';
+      case 'inReview':
+        return 'In Review';
+      case 'completed':
+        return 'Completed';
+    }
+  }
+
+  // ========================================================================
+  // VIEW SWITCHING
+  // ========================================================================
+
   switchToKanban(): void {
     this.currentView = 'kanban';
   }
@@ -219,35 +386,44 @@ export class TeamMemberComponent {
     this.currentView = 'gantt';
   }
 
-  // Drag and Drop Handler
-  drop(event: CdkDragDrop<Task[]>, targetColumn: 'toDo' | 'inProgress' | 'inReview' | 'completed'): void {
+  // ========================================================================
+  // KANBAN DRAG & DROP
+  // ========================================================================
+
+  drop(
+    event: CdkDragDrop<Task[]>,
+    targetStatus: 'toDo' | 'inProgress' | 'inReview' | 'completed'
+  ): void {
+    if (this.currentUser.role === 'client') return;
+
     if (event.previousContainer === event.container) {
-      // Reorder within the same column
-      moveItemInArray(event.container.data, event.previousIndex, event.currentIndex);
+      moveItemInArray(
+        event.container.data,
+        event.previousIndex,
+        event.currentIndex
+      );
     } else {
-      // Move to a different column
       const task = event.previousContainer.data[event.previousIndex];
-      
-      // Update task status
-      task.status = targetColumn;
-      
-      // Auto-update progress based on column
-      switch (targetColumn) {
+      let newProgress = task.progress;
+
+      switch (targetStatus) {
         case 'toDo':
-          task.progress = 0;
+          newProgress = 0;
           break;
         case 'inProgress':
-          task.progress = task.progress === 0 ? 50 : task.progress;
+          newProgress = newProgress === 0 ? 50 : newProgress;
           break;
         case 'inReview':
-          task.progress = task.progress < 80 ? 80 : task.progress;
+          newProgress = newProgress < 80 ? 80 : newProgress;
           break;
         case 'completed':
-          task.progress = 100;
+          newProgress = 100;
           break;
       }
 
-      // Transfer the item between arrays
+      task.status = targetStatus;
+      task.progress = newProgress;
+
       transferArrayItem(
         event.previousContainer.data,
         event.container.data,
@@ -255,123 +431,59 @@ export class TeamMemberComponent {
         event.currentIndex
       );
 
-      // Update Gantt chart to reflect the changes
-      this.syncTaskToGantt(task, targetColumn);
-
-      console.log(`Moved task "${task.title}" to ${targetColumn}`);
+      this.taskService
+        .updateTaskStatus(task.id, targetStatus, newProgress)
+        .subscribe({
+          next: () =>
+            console.log(`Updated task ${task.id} status to ${targetStatus}`),
+          error: (err) => console.error('Failed to update task:', err),
+        });
     }
   }
 
-  // Sync Kanban task changes to Gantt chart
-  syncTaskToGantt(task: Task, newStatus: string): void {
-    // Find corresponding Gantt task by title
-    const ganttTask = this.ganttTasks.find(gt => 
-      gt.title.toLowerCase() === task.title.toLowerCase() || 
-      gt.title.toLowerCase().includes(task.title.toLowerCase().substring(0, 15))
-    );
+  // ========================================================================
+  // GANTT HELPERS
+  // ========================================================================
 
-    if (ganttTask) {
-      // Update Gantt task status
-      ganttTask.progress = task.progress;
-      
-      // Map Kanban status to Gantt status
-      switch (newStatus) {
-        case 'toDo':
-          ganttTask.status = 'To Do';
-          break;
-        case 'inProgress':
-          ganttTask.status = 'In Progress';
-          break;
-        case 'inReview':
-          ganttTask.status = 'In Review';
-          break;
-        case 'completed':
-          ganttTask.status = 'Completed';
-          break;
-      }
-
-      console.log(`Synced Gantt task: ${ganttTask.title} to status ${ganttTask.status}`);
-    }
-  }
-
-  // Gantt Chart Methods
   generateMonths(): void {
     this.months = [];
-    const startDate = new Date('2025-01-01');
+    const startDate = new Date(this.chartStart);
+
     for (let i = 0; i < 6; i++) {
       const date = new Date(startDate);
       date.setMonth(startDate.getMonth() + i);
       this.months.push({
-        name: date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
-        date: date
+        name: date.toLocaleDateString('en-US', {
+          month: 'short',
+          year: 'numeric',
+        }),
+        date,
       });
     }
   }
 
-  calculateBarPosition(startDate: string, endDate: string): { left: string; width: string } {
-    const totalDays = (this.chartEnd.getTime() - this.chartStart.getTime()) / (1000 * 60 * 60 * 24);
-    
+  calculateBarPosition(
+    startDate: string,
+    endDate: string
+  ): { left: string; width: string } {
+    const totalDays =
+      (this.chartEnd.getTime() - this.chartStart.getTime()) /
+      (1000 * 60 * 60 * 24);
+
     const start = new Date(startDate);
     const end = new Date(endDate);
-    
-    const startOffset = (start.getTime() - this.chartStart.getTime()) / (1000 * 60 * 60 * 24);
-    const duration = (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24);
-    
-    const left = (startOffset / totalDays) * 100;
-    const width = (duration / totalDays) * 100;
-    
-    return { 
-      left: `${left}%`, 
-      width: `${width}%` 
-    };
-  }
 
-  getStatusColor(status: string): string {
-    switch (status) {
-      case 'Completed':
-        return 'bg-green-500';
-      case 'In Progress':
-        return 'bg-blue-500';
-      case 'In Review':
-        return 'bg-yellow-500';
-      case 'To Do':
-        return 'bg-gray-400';
-      default:
-        return 'bg-gray-400';
-    }
-  }
+    const left =
+      ((start.getTime() - this.chartStart.getTime()) /
+        (1000 * 60 * 60 * 24)) /
+      totalDays *
+      100;
 
-  getPriorityClass(priority: string): string {
-    return priority === 'High' 
-      ? 'bg-red-500 text-white' 
-      : 'bg-gray-800 text-white dark:bg-gray-700';
-  }
+    const width =
+      ((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) /
+      totalDays *
+      100;
 
-  getRowClass(index: number): string {
-    return index % 2 === 0 
-      ? 'bg-white dark:bg-transparent' 
-      : 'bg-gray-50/50 dark:bg-gray-800/20';
-  }
-
-  // Kanban Board Methods
-  viewTaskDetails(task: Task): void {
-    console.log('Viewing task:', task);
-    alert(`Task: ${task.title}\nDescription: ${task.description}\nProgress: ${task.progress}%\nStatus: ${task.status}`);
-  }
-
-  addNewTask(column: 'toDo' | 'inProgress' | 'inReview' | 'completed'): void {
-    const newTask: Task = {
-      id: `task-${Date.now()}`,
-      title: 'New Task',
-      description: 'Task description',
-      priority: 'Medium',
-      progress: 0,
-      assignee: this.currentUser.name,
-      tags: ['New'],
-      status: column
-    };
-    
-    this.columns[column].push(newTask);
-    console.log(`Added new task to ${column}`);
+    return { left: `${left}%`, width: `${width}%` };
   }
 }
