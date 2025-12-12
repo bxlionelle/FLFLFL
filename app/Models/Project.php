@@ -2,41 +2,112 @@
 
 namespace App\Models;
 
-// database/migrations/*_create_projects_table.php
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 
-use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
-
-return new class extends Migration
+class Project extends Model
 {
-    public function up(): void
+    use HasFactory;
+
+    protected $fillable = [
+        'name',
+        'description',
+        'status',
+        'progress',
+        'manager_id',
+        'client_id',
+        'created_by',
+        'start_date',
+        'end_date',
+        'due_date',
+        'budget',
+    ];
+
+    protected $casts = [
+        'start_date' => 'date',
+        'end_date' => 'date',
+        'due_date' => 'date',
+        'progress' => 'integer',
+    ];
+
+    /**
+     * Get the client associated with the project
+     */
+    public function client()
     {
-        Schema::create('projects', function (Blueprint $table) {
-            $table->id();
-            $table->string('name');
-            $table->text('description')->nullable();
-            $table->string('status')->default('active'); // e.g., active, on_hold, completed
-
-            // Foreign Key for the Project Manager (used by ProjectPolicy)
-            $table->foreignId('manager_id')
-                  ->constrained('users') // Assumes your users table is named 'users'
-                  ->cascadeOnDelete();
-
-            // Foreign Key for the Client (used by ProjectPolicy)
-            $table->foreignId('client_id') 
-                  ->nullable()
-                  ->constrained('users')
-                  ->nullOnDelete();
-
-            $table->date('start_date');
-            $table->date('due_date');
-            $table->timestamps();
-        });
+        return $this->belongsTo(User::class, 'client_id');
     }
 
-    public function down(): void
+    /**
+     * Get the project manager
+     */
+    public function manager()
     {
-        Schema::dropIfExists('projects');
+        return $this->belongsTo(User::class, 'manager_id');
     }
-};
+
+    /**
+     * Get the user who created the project
+     */
+    public function creator()
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
+    /**
+     * Get all team members assigned to the project
+     */
+    public function teamMembers()
+    {
+        return $this->belongsToMany(User::class, 'project_user', 'project_id', 'user_id')
+                    ->withTimestamps();
+    }
+
+    /**
+     * Alias for teamMembers (for compatibility)
+     */
+    public function members()
+    {
+        return $this->teamMembers();
+    }
+
+    /**
+     * Get all tasks associated with the project
+     */
+    public function tasks()
+    {
+        return $this->hasMany(Task::class);
+    }
+
+    /**
+     * Get all expenses associated with the project
+     */
+    public function expenses()
+    {
+        return $this->hasMany(Expense::class);
+    }
+
+    /**
+     * Scope to filter active projects
+     */
+    public function scopeActive($query)
+    {
+        return $query->where('status', 'active');
+    }
+
+    /**
+     * Scope to filter completed projects
+     */
+    public function scopeCompleted($query)
+    {
+        return $query->where('status', 'completed');
+    }
+
+    /**
+     * Check if user is a team member of this project
+     */
+    public function hasTeamMember($userId)
+    {
+        return $this->teamMembers()->where('user_id', $userId)->exists();
+    }
+}
