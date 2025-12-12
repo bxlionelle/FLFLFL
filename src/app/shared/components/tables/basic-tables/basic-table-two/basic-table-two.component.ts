@@ -1,7 +1,10 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { AvatarTextComponent } from '../../../ui/avatar/avatar-text.component';
 import { CheckboxComponent } from '../../../form/input/checkbox.component';
+import { AuthService } from '../../../../../services/auth.service';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../../../../environments/environment';
 
 @Component({
   selector: 'app-basic-table-two',
@@ -14,74 +17,155 @@ import { CheckboxComponent } from '../../../form/input/checkbox.component';
   templateUrl: './basic-table-two.component.html',
   styles: ``
 })
-export class BasicTableTwoComponent {
+export class BasicTableTwoComponent implements OnInit {
+  projects: any[] = [];
+  currentUser: any = null;
+  userRole: string | null = null;
+  isLoading: boolean = true;
 
-  tableRowData = [
-    {
-      id: 'DE124321',
-      user: { initials: 'AB', name: 'John Doe', email: 'johndoe@gmail.com' },
-      avatarColor: 'brand',
-      product: { name: 'Software License', price: '$18,50.34', purchaseDate: '2024-06-15' },
-      status: { type: 'Complete' },
-      actions: { delete: true },
-    },
-    {
-      id: 'DE124322',
-      user: { initials: 'CD', name: 'Jane Smith', email: 'janesmith@gmail.com' },
-      avatarColor: 'brand',
-      product: { name: 'Cloud Hosting', price: '$12,99.00', purchaseDate: '2024-06-18' },
-      status: { type: 'Pending' },
-      actions: { delete: true },
-    },
-    {
-      id: 'DE124323',
-      user: { initials: 'EF', name: 'Michael Brown', email: 'michaelbrown@gmail.com' },
-      avatarColor: 'brand',
-      product: { name: 'Web Domain', price: '$9,50.00', purchaseDate: '2024-06-20' },
-      status: { type: 'Cancel' },
-      actions: { delete: true },
-    },
-    {
-      id: 'DE124324',
-      user: { initials: 'GH', name: 'Alice Johnson', email: 'alicejohnson@gmail.com' },
-      avatarColor: 'brand',
-      product: { name: 'SSL Certificate', price: '$2,30.45', purchaseDate: '2024-06-25' },
-      status: { type: 'Pending' },
-      actions: { delete: true },
-    },
-    {
-      id: 'DE124325',
-      user: { initials: 'IJ', name: 'Robert Lee', email: 'robertlee@gmail.com' },
-      avatarColor: 'brand',
-      product: { name: 'Premium Support', price: '$15,20.00', purchaseDate: '2024-06-30' },
-      status: { type: 'Complete' },
-      actions: { delete: true },
-    },
-  ];
+  constructor(
+    private authService: AuthService,
+    private http: HttpClient
+  ) {}
 
-  selectedRows: string[] = [];
-  selectAll: boolean = false;
+  ngOnInit(): void {
+    this.loadUserAndProjects();
+  }
 
-  handleSelectAll() {
-    this.selectAll = !this.selectAll;
-    if (this.selectAll) {
-      this.selectedRows = this.tableRowData.map(row => row.id);
-    } else {
-      this.selectedRows = [];
+  loadUserAndProjects(): void {
+    // Get current user and their role
+    this.authService.currentUser$.subscribe(user => {
+      if (user) {
+        this.currentUser = user;
+        this.userRole = this.authService.getUserRole();
+        this.loadProjects();
+      }
+    });
+  }
+
+  loadProjects(): void {
+    this.isLoading = true;
+    const apiUrl = environment.apiUrl;
+
+    // Fetch projects based on user role
+    this.http.get<any>(`${apiUrl}/projects`).subscribe({
+      next: (response) => {
+        console.log('Projects response:', response);
+        
+        // Filter projects based on user role
+        this.projects = this.filterProjectsByRole(response.data || response);
+        this.isLoading = false;
+      },
+      error: (error) => {
+        console.error('Error loading projects:', error);
+        this.isLoading = false;
+        // Use test data if API fails
+        this.useTestData();
+      }
+    });
+  }
+
+  filterProjectsByRole(allProjects: any[]): any[] {
+    if (!this.currentUser || !allProjects) return [];
+
+    switch (this.userRole?.toLowerCase()) {
+      case 'member':
+        // Show only projects where the user is assigned as a team member
+        return allProjects.filter(project => 
+          project.team_members?.some((member: any) => member.id === this.currentUser.id) ||
+          project.members?.some((member: any) => member.id === this.currentUser.id)
+        );
+
+      case 'project_manager':
+        // Show only projects created by this project manager
+        return allProjects.filter(project => 
+          project.created_by === this.currentUser.id ||
+          project.manager_id === this.currentUser.id
+        );
+
+      case 'client':
+        // Show only projects where this user is the client
+        return allProjects.filter(project => 
+          project.client_id === this.currentUser.id
+        );
+
+      case 'administrator':
+        // Admins see all projects
+        return allProjects;
+
+      default:
+        return [];
     }
   }
 
-  handleRowSelect(id: string) {
-    if (this.selectedRows.includes(id)) {
-      this.selectedRows = this.selectedRows.filter(rowId => rowId !== id);
-    } else {
-      this.selectedRows = [...this.selectedRows, id];
-    }
+  useTestData(): void {
+    // Test data for different roles
+    const testProjects = [
+      {
+        id: 1,
+        name: 'E-commerce Platform',
+        status: 'On Track',
+        progress: 65,
+        client: { name: 'ABC Corp', email: 'contact@abc.com' },
+        team_members: [
+          { id: 1, name: 'John Doe', avatar: 'JD' },
+          { id: 2, name: 'Jane Smith', avatar: 'JS' }
+        ],
+        deadline: '2024-12-31',
+        created_by: 1
+      },
+      {
+        id: 2,
+        name: 'Mobile App Development',
+        status: 'At Risk',
+        progress: 45,
+        client: { name: 'XYZ Ltd', email: 'info@xyz.com' },
+        team_members: [
+          { id: 2, name: 'Jane Smith', avatar: 'JS' }
+        ],
+        deadline: '2024-11-30',
+        created_by: 1
+      },
+      {
+        id: 3,
+        name: 'Website Redesign',
+        status: 'Completed',
+        progress: 100,
+        client: { name: 'Tech Solutions', email: 'hello@techsol.com' },
+        team_members: [
+          { id: 1, name: 'John Doe', avatar: 'JD' }
+        ],
+        deadline: '2024-10-15',
+        created_by: 2
+      }
+    ];
+
+    this.projects = this.filterProjectsByRole(testProjects);
   }
 
-  getBadgeColor(type: string): 'success' | 'warning' | 'error' {
-    if (type === 'Complete') return 'success';
-    if (type === 'Pending') return 'warning';
-    return 'error';
+  getStatusColor(status: string): string {
+    const statusLower = status.toLowerCase();
+    if (statusLower.includes('track') || statusLower.includes('complete')) {
+      return 'text-green-700 bg-green-100 dark:bg-green-900/30 dark:text-green-400';
+    }
+    if (statusLower.includes('risk') || statusLower.includes('delay')) {
+      return 'text-red-700 bg-red-100 dark:bg-red-900/30 dark:text-red-400';
+    }
+    return 'text-yellow-700 bg-yellow-100 dark:bg-yellow-900/30 dark:text-yellow-400';
+  }
+
+  getRoleName(): string {
+    switch (this.userRole?.toLowerCase()) {
+      case 'member':
+        return 'Team Member';
+      case 'project_manager':
+        return 'Project Manager';
+      case 'client':
+        return 'Client';
+      case 'administrator':
+        return 'Administrator';
+      default:
+        return 'User';
+    }
   }
 }
