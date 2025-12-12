@@ -29,11 +29,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/projects', [ProjectController::class, 'index']);
     Route::get('/projects/{project}', [ProjectController::class, 'show']); // Use policy for authorization
     Route::get('/projects/{project}/details', [ProjectController::class, 'showDetails']);
+    //insert the /projects/{project}/members.
     
     Route::put('/user/profile', [UserController::class, 'updateProfile']);
 });
 
-Route::middleware(['auth:sanctum', 'role:administrator'])->group(function () {
+Route::middleware(['auth:sanctum', 'role:administrator,project_manager'])->group(function () {
     Route::get('users/count/total', [UserController::class, 'getUserCount']);
     Route::apiResource('users', UserController::class); 
     

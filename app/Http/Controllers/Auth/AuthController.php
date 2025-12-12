@@ -32,19 +32,18 @@ class AuthController extends Controller
             $role = Role::findOrFail($roleId);
             $user->assignRole($role->name);
         } else {
-            $user->assignRole('member'); // Default role
+            $user->assignRole('member');
         }
 
-        // Create token for new user
-        $token = $user->createToken('auth_token')->plainTextToken;
+        // ❌ REMOVE AUTO-LOGIN AND TOKEN CREATION
 
         return response()->json([
             'success' => true,
-            'access_token' => $token,  // ✅ Changed from 'token' to 'access_token'
-            'token_type' => 'Bearer',
-            'user' => $user->load('roles')
+            'message' => 'User created successfully',
+            'user' => $user->load('roles'),
         ], 201);
     }
+
 
     /**
      * Sanctum API Token Login (FIXED)
